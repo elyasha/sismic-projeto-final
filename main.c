@@ -3,11 +3,11 @@
  * Matheus Elyasha Lopes
  * 4 Novembro 2021
  *
- * Uma aplicaÁ„o embarcada que transforma a LaunchPad num medidor de frequÍncia cardiaca
- * e mostra o resultado dos batimentos cardiacos num display LCD e alÈm disso monitora
- * o nÌvel de batimentos e informa num terminal que a pessoa est· num nÌvel acima de um limiar definido
+ * Uma aplica√ß√£o embarcada que transforma a LaunchPad num medidor de frequ√™ncia cardiaca
+ * e mostra o resultado dos batimentos cardiacos num display LCD e al√©m disso monitora
+ * o n√≠vel de batimentos e informa num terminal que a pessoa est√° num n√≠vel acima de um limiar definido
  *
- * I2C: MAX30102 + LCD (com mÛdulo i2c)
+ * I2C: MAX30102 + LCD (com m√≥dulo i2c)
  * UART: HC-05
  */
 #include <msp430.h> 
@@ -17,6 +17,7 @@
 #include "i2c.h"
 #include "lcd.h"
 #include "max30102.h"
+#include "pulsesensor.h"
 
 #define LED1_ON (P1OUT |= BIT0)
 #define LED1_OFF (P1OUT &= ~BIT0)
@@ -36,13 +37,15 @@
 #define READ 1 //Enderecar Escravo para ler
 #define WRITE 0 //Enderecar Escravo para escrever
 
+volatile uint16_t adc_output, i, pico_base, numero_batimentos, numero_pulsos_amostragrem = 0, adc_vetor[128];
+int32_t heart_rate = 87; // Valor da frequencia cardiaca
+
 
 uint32_t amostras_infrared[100]; // Dados do sensor usando LED infravermelho
 uint32_t amostras_red[100]; // Dados do sensor usando LED vermelho
 int32_t numero_amostras = 100; // Numero total de amostras
 int32_t spo2; // Valor de saturacao SpO2
 int8_t spo2_valid; // Indicador para saber se o valor de SPO2 e valido
-int32_t heart_rate = 87; // Valor da frequencia cardiaca
 int8_t heart_rate_valid; // Indicador para saber se a frequencia cardiaca e valida
 
 /**
@@ -55,11 +58,20 @@ int main(void)
 	// Inicializar os LEDs
 	configurar_led();
 
+	// Inicializar os pinos (P6.0)
+	configurar_pinos();
+
 	// Configurar USCI A0 para interface UART
 	USCI_A0_config();
 
 	// Configurar USCI B1 para ser mestre do barramento I2C
 	USCI_B0_config();
+
+	// Inicializar o ADC12 do MSP430 para fazer convers√£o
+	adc_config();
+
+	// Inicializar o timer para uso conjunto ao ADC12
+	timer_adc_config();
 
 	// Inicializar o LCD
 	lcd_inic();
@@ -68,63 +80,117 @@ int main(void)
 
 	__enable_interrupt();
 
-    // Inicializar enviando mensagem para o usu·rio
+    // Inicializar enviando mensagem para o usu√°rio
     bt_str("Inicializando...\n");
     lcd_cursor(0);
     lcd_escrever_string("Inicializando...");
-    LED2_ON; // InicializaÁ„o OK
+    LED2_ON; // Inicializa√ß√£o OK
 
     // Testar as interfaces
     LED2_OFF;
 
-    // N„o vamos testar Bluetooth
+    // N√£o vamos testar Bluetooth pois √© a fonte principal de comunica√ß√£o
 
     // Testar LCD
       if(i2c_test(LCD_ADDRESS, READ) == FALSE || i2c_test(LCD_ADDRESS, WRITE) == FALSE) {
-          LED1_ON; // Ligar LED vermelho pois h· um erro (LCD perdeu a conex„o depois da inicializaÁ„o)
-          bt_str("LCD n„o conectado. Por favor reveja a ligaÁ„o e tente novamente.\n");
-          while(1); // Travar execuÁ„o
+          LED1_ON; // Ligar LED vermelho pois h√° um erro (LCD perdeu a conex√£o depois da inicializa√ß√£o)
+          bt_str("LCD n√£o conectado. Por favor reveja a liga√ß√£o e tente novamente.\n");
+          while(1); // Travar execu√ß√£o
       }
       bt_str("LCD conectado\n");
       lcd_limpar();
       lcd_cursor(0);
       lcd_escrever_string("LCD conectado");
-      // Testar Modulo MAX30102
-      if(i2c_test(MAX30102_ADDRESS, READ) == FALSE || i2c_test(MAX30102_ADDRESS, WRITE) == FALSE) {
-          LED1_ON;
-          bt_str("MAX30102 n„o conectado\n");
-          lcd_limpar();
-          lcd_cursor(0);
-          lcd_escrever_string("MAXIM desligado");
-          while(1);
-      }
-
-      bt_str("MAX30102 conectado\n");
-      lcd_limpar();
-      lcd_cursor(0);
-      lcd_escrever_string("MAXIM ligado");
 
 
-    // Iniciar mediÁ„o
-      bt_str("Iniciando mediÁ„o\n");
+
+    // Iniciar medi√ß√£o
+      bt_str("Iniciando medicao\n");
       lcd_limpar();
       lcd_cursor(0);
       lcd_escrever_string("Inicio medicao");
 
+      // Loop infinito para acompanhamento
+      while(1)
+         {
+             pico_base = 0;
 
+             for(i = 0; i<128; i++) //filtra um novo valor de base para o pico
+             {                      // do sinal a cada loop
+                 adc_vetor[i] = adc_output;
+                 if(adc_vetor[i]>pico_base)
+                     pico_base = adc_vetor[i];
+             }
 
-    // Informar a nova mÈdia da frequÍncia cardÌaca
-    bt_str("BMP: ");
-    bt_decimal(heart_rate);
-    bt_str("  S2\n");
-    lcd_limpar();
-    lcd_cursor(0);
-    lcd_escrever_string("BMP:");
-    lcd_cursor(5);
-    lcd_decimal(heart_rate);
+             if((adc_output > pico_base) && (numero_batimentos != 5))
+             {
+                 numero_batimentos++;
+                 P1OUT &= ~BIT0;
+                 P1OUT |= BIT0;
+                 __delay_cycles(128000);
+                 P1OUT ^=BIT0;
+             }
 
-    lcd_cursor(10);
-    lcd_escrever_string("S2");
+             // Calcular o BMP novo devido aos cinco batimentos
+             if(numero_batimentos==5) //media de 5 batimentos
+                 {
+                     // heart_rate = (500[Hz]*5*60)/numero_pulsos_amostragrem
+                     heart_rate = 150000/numero_pulsos_amostragrem;
+
+                     // Filtro de frequ√™ncia card√≠aca em software para exibir valores coerentes com a realidade
+                     if((heart_rate>30)&&(heart_rate<200))
+                     {
+                         // Imprimir no LCD e no modulo Bluetooth
+                         // Informar a nova m√©dia da frequ√™ncia card√≠aca
+                         bt_str("BMP: ");
+                         bt_decimal(heart_rate);
+                         bt_str("  S2\n");
+                         lcd_limpar();
+                         lcd_cursor(0);
+                         lcd_escrever_string("BMP:");
+                         lcd_cursor(5);
+                         lcd_decimal(heart_rate);
+
+                         lcd_cursor(10);
+                         lcd_escrever_string("S2");
+
+                         if (heart_rate < 50)
+                         {
+                             lcd_cursor(0x40);
+                             lcd_escrever_string("! BMP MT baixa !");
+                             bt_str("! BMP MT baixa !");
+                         }
+                         else if (heart_rate >= 50 && heart_rate < 60)
+                         {
+                             lcd_cursor(0x40);
+                             lcd_escrever_string("BMP baixa");
+                             bt_str("BMP baixa");
+                         }
+                         else if (heart_rate >= 60 && heart_rate < 80)
+                         {
+                             lcd_cursor(0x40);
+                             lcd_escrever_string("BMP normal");
+                             bt_str("BMP normal");
+                         }
+                         else if (heart_rate >= 80 && heart_rate < 120)
+                         {
+                             lcd_cursor(0x40);
+                             lcd_escrever_string("BMP alta");
+                             bt_str("BMP alta");
+                         }
+                         else {
+                             lcd_cursor(0x40);
+                             lcd_escrever_string("! BMP MT alta !");
+                             bt_str("! BMP MT alta !");
+                         }
+                     }
+
+                     // Resetar os contadores para recalcular a frequencia cardiaca
+                     numero_batimentos = 0;
+                     numero_pulsos_amostragrem = 0;
+                 }
+         }
+
 
 	return 0;
 }
@@ -134,4 +200,22 @@ void delay(int x)
 {
     volatile int i;
     for (i = 0; i < x; i++);
+}
+
+#pragma vector = TIMER0_A0_VECTOR
+__interrupt void TA0_CCR0_ISR()
+{
+    ADC12CTL0 |= ADC12ENC;       //habilita o conversor
+    ADC12CTL0 &= ~ADC12SC;       //gera uma flanco de subida em SC
+    ADC12CTL0 |= ADC12SC;
+    numero_pulsos_amostragrem++;
+
+}
+
+#pragma vector = ADC12_VECTOR //interrupcao do conversor AD
+__interrupt void ADC12_ISR()
+{
+    ADC12IFG = 0;
+    adc_output= ADC12MEM0;        //canal A0
+
 }

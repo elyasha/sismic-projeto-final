@@ -16,5 +16,8 @@ void configurar_led(void)
     P1OUT &= ~BIT0;
 }
 
-
+void configurar_pinos(void)
+{
+    P6SEL |= BIT0; // Pino utilizado para receber o sinal de frequencia cardiaca
+}
 
