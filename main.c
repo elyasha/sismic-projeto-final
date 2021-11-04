@@ -40,7 +40,7 @@ volatile uint16_t adc_output, i, pico_base, numero_batimentos, numero_pulsos_amo
 /**
  * main.c
  */
-int main(void)
+void main(void)
 {
     WDTCTL = WDTPW | WDTHOLD; // stop watchdog timer
 
@@ -193,7 +193,6 @@ int main(void)
         }
     }
 
-    return 0;
 }
 
 // Delay para evitar rebotes
