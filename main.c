@@ -108,7 +108,7 @@ int main(void)
 
 
       // Loop infinito para acompanhamento
-      while(1)
+      while(TRUE)
          {
              pico_base = 0;
 
@@ -123,7 +123,7 @@ int main(void)
                      pico_base = adc_vetor[i];
              }
 
-             if((adc_output > pico_base) && (numero_batimentos != 5))
+             if((adc_output > pico_base) && (numero_batimentos < 5))
              {
                  numero_batimentos++;
                  P1OUT &= ~BIT0;
@@ -133,13 +133,13 @@ int main(void)
              }
 
              // Calcular o BMP novo devido aos cinco batimentos
-             if(numero_batimentos==5)
+             if(numero_batimentos>=5)
                  {
                      // heart_rate = (500[Hz]*5*60)/numero_pulsos_amostragrem
                      heart_rate = 150000/numero_pulsos_amostragrem;
 
                      // Filtro de frequência cardíaca em software para exibir valores coerentes com a realidade
-                     if((heart_rate>30)&&(heart_rate<200))
+                     if((heart_rate>20)&&(heart_rate<180))
                      {
                          // Imprimir no LCD e no modulo Bluetooth
                          // Informar a nova média da frequência cardíaca
@@ -209,7 +209,7 @@ void delay(int x)
 }
 
 #pragma vector = TIMER0_A0_VECTOR
-__interrupt void TA0_CCR0_ISR()
+__interrupt void ta0_isr()
 {
     ADC12CTL0 |= ADC12ENC;       // Habilita o conversor
     ADC12CTL0 &= ~ADC12SC;       // Gera uma flanco de subida em SC
@@ -218,10 +218,10 @@ __interrupt void TA0_CCR0_ISR()
 
 }
 
-#pragma vector = ADC12_VECTOR // Interrupcao do conversor AD
-__interrupt void ADC12_ISR()
+#pragma vector = ADC12_VECTOR
+__interrupt void adc12_isr()
 {
     ADC12IFG = 0;
-    adc_output= ADC12MEM0;        // Canal A0
+    adc_output= ADC12MEM0;
 
 }

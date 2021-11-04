@@ -13,6 +13,13 @@
 
 #include <msp430.h>
 
+// Enviar um caracter pela serial
+void bt_char(char c)
+{
+    while ((UCA0IFG & UCTXIFG) == 0)
+        ; //Esperar TXIFG=1
+    UCA0TXBUF = c;
+}
 
 // Receber um caractere serial. Elimina '\n' ou '\r'
 // Prende esperando chegar algo
@@ -53,13 +60,7 @@ void bt_str(char *vet)
     while (vet[i] != '\0')
         bt_char(vet[i++]);
 }
-// Enviar um caracter pela serial
-void bt_char(char c)
-{
-    while ((UCA0IFG & UCTXIFG) == 0)
-        ; //Esperar TXIFG=1
-    UCA0TXBUF = c;
-}
+
 // Configurar USCI_A0
 void USCI_A0_config(void)
 {
