@@ -16,7 +16,6 @@
 #include "hc05.h"
 #include "i2c.h"
 #include "lcd.h"
-#include "max30102.h"
 #include "pulsesensor.h"
 
 #define LED1_ON (P1OUT |= BIT0)
@@ -25,7 +24,7 @@
 
 #define LED2_ON (P4OUT |= BIT7)
 #define LED2_OFF (P4OUT &= ~BIT7)
-#define LED2_TOGGLE (P4OUT ^= BIT7
+#define LED2_TOGGLE (P4OUT ^= BIT7)
 
 #define SMCLK 1048576L // frequencia do SMCLK
 #define ACLK 32768     // frequencia do ACLK
@@ -37,16 +36,7 @@
 #define READ 1 //Enderecar Escravo para ler
 #define WRITE 0 //Enderecar Escravo para escrever
 
-volatile uint16_t adc_output, i, pico_base, numero_batimentos, numero_pulsos_amostragrem = 0, adc_vetor[128];
-int32_t heart_rate = 87; // Valor da frequencia cardiaca
-
-
-uint32_t amostras_infrared[100]; // Dados do sensor usando LED infravermelho
-uint32_t amostras_red[100]; // Dados do sensor usando LED vermelho
-int32_t numero_amostras = 100; // Numero total de amostras
-int32_t spo2; // Valor de saturacao SpO2
-int8_t spo2_valid; // Indicador para saber se o valor de SPO2 e valido
-int8_t heart_rate_valid; // Indicador para saber se a frequencia cardiaca e valida
+volatile uint16_t adc_output, i, pico_base, numero_batimentos, numero_pulsos_amostragrem = 0, adc_vetor[128], heart_rate=0;
 
 /**
  * main.c
@@ -85,6 +75,8 @@ int main(void)
     lcd_cursor(0);
     lcd_escrever_string("Inicializando...");
     LED2_ON; // Inicialização OK
+    __delay_cycles(1280000);
+
 
     // Testar as interfaces
     LED2_OFF;
@@ -101,6 +93,8 @@ int main(void)
       lcd_limpar();
       lcd_cursor(0);
       lcd_escrever_string("LCD conectado");
+      __delay_cycles(1280000);
+
 
 
 
@@ -109,6 +103,8 @@ int main(void)
       lcd_limpar();
       lcd_cursor(0);
       lcd_escrever_string("Inicio medicao");
+      __delay_cycles(1280000);
+
 
       // Loop infinito para acompanhamento
       while(1)
@@ -132,7 +128,7 @@ int main(void)
              }
 
              // Calcular o BMP novo devido aos cinco batimentos
-             if(numero_batimentos==5) //media de 5 batimentos
+             if(numero_batimentos==5)
                  {
                      // heart_rate = (500[Hz]*5*60)/numero_pulsos_amostragrem
                      heart_rate = 150000/numero_pulsos_amostragrem;
@@ -158,32 +154,37 @@ int main(void)
                          {
                              lcd_cursor(0x40);
                              lcd_escrever_string("! BMP MT baixa !");
-                             bt_str("! BMP MT baixa !");
+                             bt_str("! BMP MT baixa !\n");
                          }
                          else if (heart_rate >= 50 && heart_rate < 60)
                          {
                              lcd_cursor(0x40);
                              lcd_escrever_string("BMP baixa");
-                             bt_str("BMP baixa");
+                             bt_str("BMP baixa\n");
                          }
                          else if (heart_rate >= 60 && heart_rate < 80)
                          {
                              lcd_cursor(0x40);
                              lcd_escrever_string("BMP normal");
-                             bt_str("BMP normal");
+                             bt_str("BMP normal\n");
                          }
                          else if (heart_rate >= 80 && heart_rate < 120)
                          {
                              lcd_cursor(0x40);
                              lcd_escrever_string("BMP alta");
-                             bt_str("BMP alta");
+                             bt_str("BMP alta\n");
                          }
                          else {
                              lcd_cursor(0x40);
                              lcd_escrever_string("! BMP MT alta !");
-                             bt_str("! BMP MT alta !");
+                             bt_str("! BMP MT alta !\n");
                          }
                      }
+
+                     LED2_OFF;
+                     LED2_ON;
+                     __delay_cycles(128000);
+                     LED2_TOGGLE;
 
                      // Resetar os contadores para recalcular a frequencia cardiaca
                      numero_batimentos = 0;
