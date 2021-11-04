@@ -7,8 +7,9 @@
  * e mostra o resultado dos batimentos cardiacos num display LCD e além disso monitora
  * o nível de batimentos e informa num terminal que a pessoa está num nível acima de um limiar definido
  *
- * I2C: MAX30102 + LCD (com módulo i2c)
+ * I2C: LCD (com módulo i2c)
  * UART: HC-05
+ * A0: Pulse sensor
  */
 #include <msp430.h> 
 #include <stdint.h>
@@ -111,8 +112,12 @@ int main(void)
          {
              pico_base = 0;
 
-             for(i = 0; i<128; i++) //filtra um novo valor de base para o pico
-             {                      // do sinal a cada loop
+             // Filtrar um pico base do sinal a cada loop
+
+             // Aqui pode ser melhorado esse algoritmo para usar um limiar (por exemplo 2800 ou 3000)
+             // ou outra estratégia para calcular os batimentos e a freq. cardíaca
+             for(i = 0; i<128; i++)
+             {
                  adc_vetor[i] = adc_output;
                  if(adc_vetor[i]>pico_base)
                      pico_base = adc_vetor[i];
@@ -206,17 +211,17 @@ void delay(int x)
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void TA0_CCR0_ISR()
 {
-    ADC12CTL0 |= ADC12ENC;       //habilita o conversor
-    ADC12CTL0 &= ~ADC12SC;       //gera uma flanco de subida em SC
+    ADC12CTL0 |= ADC12ENC;       // Habilita o conversor
+    ADC12CTL0 &= ~ADC12SC;       // Gera uma flanco de subida em SC
     ADC12CTL0 |= ADC12SC;
     numero_pulsos_amostragrem++;
 
 }
 
-#pragma vector = ADC12_VECTOR //interrupcao do conversor AD
+#pragma vector = ADC12_VECTOR // Interrupcao do conversor AD
 __interrupt void ADC12_ISR()
 {
     ADC12IFG = 0;
-    adc_output= ADC12MEM0;        //canal A0
+    adc_output= ADC12MEM0;        // Canal A0
 
 }
