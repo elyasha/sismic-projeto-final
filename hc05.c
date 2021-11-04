@@ -63,10 +63,10 @@ void bt_str(char *vet)
 // Configurar USCI_A0
 void USCI_A0_config(void)
 {
-    UCA0CTL1 = UCSWRST;   //RST=1 para USCI_A0
-    UCA0CTL0 = 0;         //sem paridade, 8 bits, 1 stop, modo UART
-    UCA0BRW = 3;          //Divisor
-    UCA0MCTL = UCBRS_3;   //Modulador = 3 e UCOS=0
-    P3SEL |= BIT4 | BIT3; //Disponibilizar pinos
-    UCA0CTL1 = UCSSEL_1;  //RST=0, ACLK
+    UCA0CTL1 = UCSWRST;   // RST=1 para USCI_A0
+    UCA0CTL0 = 0;         // sem paridade, 8 bits, 1 stop, modo UART
+    UCA0BRW = 3;          // Divisor
+    UCA0MCTL = UCBRS_3;   // Modulador = 3 e UCOS=0
+    P3SEL |= BIT4 | BIT3; // Disponibilizar pinos
+    UCA0CTL1 = UCSSEL_1;  // RST=0, ACLK
 }

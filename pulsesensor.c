@@ -7,7 +7,7 @@
 #include <msp430.h>
 
 /*
- * Configura��o do conversor AD
+ * Configuracao do conversor AD
  */
 void adc_config()
 {
@@ -18,7 +18,7 @@ void adc_config()
                     ADC12MSC |    // Multiplas conversoes do trigger
                     ADC12ON;      // Liga o quantizador
 
-        ADC12CTL1 = ADC12CSTARTADD_0 | // In�cio da mem�ria: Resultado em MEM0
+        ADC12CTL1 = ADC12CSTARTADD_0 | // Inicio da memoria: Resultado em MEM0
                     ADC12SHS_0 |       // Trigger -> bit SC (por software)
                     ADC12SSEL_0 |      // Clock de 5MHZ
                     ADC12CONSEQ_0;
@@ -26,7 +26,7 @@ void adc_config()
         ADC12CTL2 = ADC12TCOFF | // Desativa o sensor de temperatura
                     ADC12RES_2;  // Modo de 12 bits
 
-        ADC12MCTL0 = 0; // Controle de mem�ria 0
+        ADC12MCTL0 = 0; // Controle de memoria 0
 
         ADC12IE = BIT0;
         ADC12CTL0 |= ADC12ENC; // Habilitar o ADC

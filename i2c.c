@@ -12,7 +12,7 @@ void USCI_B0_config(void)
 {
     // Configurar MSP com mestre no I2C (Usando UCB0)
     UCB0CTL1 |= UCSWRST;  // UCSI B0 em ressete
-    UCB0CTL0 = UCSYNC |   //S�ncrono
+    UCB0CTL0 = UCSYNC |   //Sincrono
                UCMODE_3 | //Modo I2C
                UCMST;     //Mestre
     UCB0BRW = BR100K;     //100 kbps

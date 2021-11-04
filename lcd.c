@@ -28,7 +28,7 @@ void lcd_i2c_write(char dado)
     {
         P1OUT |= BIT0; // NACK=Sinalizar problema
         while (1)
-            ; // Travar execu��o
+            ; // Travar execucao
     }
     UCB0CTL1 |= UCTXSTP; // Gerar STOP
     while ((UCB0CTL1 & UCTXSTP) == UCTXSTP)
@@ -81,7 +81,7 @@ void lcd_escrever_string(char *vt)
     }
 }
 
-// Apagar todas informa��es do LCD
+// Apagar todas informacoes do LCD
 void lcd_limpar()
 {
     lcd_cursor(0);
@@ -91,8 +91,8 @@ void lcd_limpar()
 }
 
 /*
- * Auxiliar inicializa��o do LCD (RS=RW=0)
- * S� serve para a inicializa��o
+ * Auxiliar inicializacao do LCD (RS=RW=0)
+ * Somente serve para a inicializacao
  */
 void lcd_aux(char dado)
 {
@@ -115,7 +115,7 @@ void lcd_aux(char dado)
 void lcd_inic(void)
 {
 
-    UCB0I2CSA = LCD_ADDRESS; //Endere�o do Escravo
+    UCB0I2CSA = LCD_ADDRESS; //Endereco do Escravo
 
     // Preparar I2C para operar
     UCB0CTL1 |= UCTR |   // Mestre TX
@@ -123,11 +123,11 @@ void lcd_inic(void)
 
     while ((UCB0IFG & UCTXIFG) == 0)
         ;          // Esperar TXIFG = 1
-    UCB0TXBUF = 0; // Sa�da PCF = 0;
+    UCB0TXBUF = 0; // Saida PCF = 0;
     while ((UCB0CTL1 & UCTXSTT) == UCTXSTT)
         ; // Esperar STT = 0
 
-    // Comecar inicializa��o
+    // Comecar inicializacao
     lcd_aux(0); // RS=RW=0, BL=1
     lcd_atraso(20000);
     lcd_aux(3); // 3
