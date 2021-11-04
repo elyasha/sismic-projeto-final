@@ -9,10 +9,10 @@
 void configurar_led(void)
 {
 
-    P4DIR |= BIT7; // P4.7 = saída (verde)
+    P4DIR |= BIT7; // P4.7 = saï¿½da (verde)
     P4OUT &= ~BIT7;
 
-    P1DIR |= BIT0; // P1.0 = saída (vermelho)
+    P1DIR |= BIT0; // P1.0 = saï¿½da (vermelho)
     P1OUT &= ~BIT0;
 }
 
@@ -20,4 +20,3 @@ void configurar_pinos(void)
 {
     P6SEL |= BIT0; // Pino utilizado para receber o sinal de frequencia cardiaca
 }
-

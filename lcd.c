@@ -7,7 +7,6 @@
 #include <msp430.h>
 #include <lcd.h>
 
-
 void lcd_atraso(long x)
 {
     volatile int y;
@@ -29,7 +28,7 @@ void lcd_i2c_write(char dado)
     {
         P1OUT |= BIT0; // NACK=Sinalizar problema
         while (1)
-            ; // Travar execução
+            ; // Travar execuï¿½ï¿½o
     }
     UCB0CTL1 |= UCTXSTP; // Gerar STOP
     while ((UCB0CTL1 & UCTXSTP) == UCTXSTP)
@@ -82,7 +81,7 @@ void lcd_escrever_string(char *vt)
     }
 }
 
-// Apagar todas informações do LCD
+// Apagar todas informaï¿½ï¿½es do LCD
 void lcd_limpar()
 {
     lcd_cursor(0);
@@ -92,8 +91,8 @@ void lcd_limpar()
 }
 
 /*
- * Auxiliar inicialização do LCD (RS=RW=0)
- * Só serve para a inicialização
+ * Auxiliar inicializaï¿½ï¿½o do LCD (RS=RW=0)
+ * Sï¿½ serve para a inicializaï¿½ï¿½o
  */
 void lcd_aux(char dado)
 {
@@ -116,7 +115,7 @@ void lcd_aux(char dado)
 void lcd_inic(void)
 {
 
-    UCB0I2CSA = LCD_ADDRESS; //Endereço do Escravo
+    UCB0I2CSA = LCD_ADDRESS; //Endereï¿½o do Escravo
 
     // Preparar I2C para operar
     UCB0CTL1 |= UCTR |   // Mestre TX
@@ -124,10 +123,11 @@ void lcd_inic(void)
 
     while ((UCB0IFG & UCTXIFG) == 0)
         ;          // Esperar TXIFG = 1
-    UCB0TXBUF = 0; // Saída PCF = 0;
-    while ((UCB0CTL1 & UCTXSTT) == UCTXSTT); // Esperar STT = 0
+    UCB0TXBUF = 0; // Saï¿½da PCF = 0;
+    while ((UCB0CTL1 & UCTXSTT) == UCTXSTT)
+        ; // Esperar STT = 0
 
-    // Comecar inicialização
+    // Comecar inicializaï¿½ï¿½o
     lcd_aux(0); // RS=RW=0, BL=1
     lcd_atraso(20000);
     lcd_aux(3); // 3
@@ -159,8 +159,6 @@ void lcd_inic(void)
     lcd_atraso(50);
 }
 
-
-
 void lcd_decimal(int y)
 {
     int z, x = y;
@@ -175,5 +173,4 @@ void lcd_decimal(int y)
     x = x - 10 * z;
     z = x / 1; // unidades
     lcd_escrever_char(0x30 + z);
-
 }

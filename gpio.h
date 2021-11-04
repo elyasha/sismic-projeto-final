@@ -10,5 +10,4 @@
 void configurar_led(void);
 void configurar_pinos(void);
 
-
 #endif /* GPIO_H_ */

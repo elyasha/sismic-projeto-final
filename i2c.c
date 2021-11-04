@@ -12,7 +12,7 @@ void USCI_B0_config(void)
 {
     // Configurar MSP com mestre no I2C (Usando UCB0)
     UCB0CTL1 |= UCSWRST;  // UCSI B0 em ressete
-    UCB0CTL0 = UCSYNC |   //Síncrono
+    UCB0CTL0 = UCSYNC |   //Sï¿½ncrono
                UCMODE_3 | //Modo I2C
                UCMST;     //Mestre
     UCB0BRW = BR100K;     //100 kbps
@@ -23,7 +23,6 @@ void USCI_B0_config(void)
     P3REN |= BIT1 | BIT0; // Habilitar resistor
     P3OUT |= BIT1 | BIT0; // Pullup
 }
-
 
 // Testar o endereco adr para escrita ou leitura
 // modo = READ --> Enderecar escravo para leitura

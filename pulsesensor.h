@@ -11,6 +11,4 @@
 void adc_config();
 void timer_adc_config();
 
-
-
 #endif /* PULSESENSOR_H_ */

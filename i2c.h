@@ -12,7 +12,7 @@
 #define BR10K 105 //(SMCLK) 1.048.576/105 ~= 10kHz
 #define TRUE 1
 #define FALSE 0
-#define READ 1 //Enderecar Escravo para ler
+#define READ 1	//Enderecar Escravo para ler
 #define WRITE 0 //Enderecar Escravo para escrever
 
 void USCI_B0_config(void);

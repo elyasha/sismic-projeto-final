@@ -20,7 +20,6 @@
 #define BIT_E BIT2
 #define BIT_BL BIT3
 
-
 void lcd_i2c_write(char dado);
 void lcd_limpar();
 void lcd_aux(char dado);

@@ -11,7 +11,7 @@
  * UART: HC-05
  * A0: Pulse sensor
  */
-#include <msp430.h> 
+#include <msp430.h>
 #include <stdint.h>
 #include "gpio.h"
 #include "hc05.h"
@@ -30,46 +30,44 @@
 #define SMCLK 1048576L // frequencia do SMCLK
 #define ACLK 32768     // frequencia do ACLK
 
-
-
 #define TRUE 1
 #define FALSE 0
-#define READ 1 //Enderecar Escravo para ler
+#define READ 1  //Enderecar Escravo para ler
 #define WRITE 0 //Enderecar Escravo para escrever
 
-volatile uint16_t adc_output, i, pico_base, numero_batimentos, numero_pulsos_amostragrem = 0, adc_vetor[128], heart_rate=0;
+volatile uint16_t adc_output, i, pico_base, numero_batimentos, numero_pulsos_amostragrem = 0, adc_vetor[128], heart_rate = 0;
 
 /**
  * main.c
  */
 int main(void)
 {
-	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
-	
-	// Inicializar os LEDs
-	configurar_led();
+    WDTCTL = WDTPW | WDTHOLD; // stop watchdog timer
 
-	// Inicializar os pinos (P6.0)
-	configurar_pinos();
+    // Inicializar os LEDs
+    configurar_led();
 
-	// Configurar USCI A0 para interface UART
-	USCI_A0_config();
+    // Inicializar os pinos (P6.0)
+    configurar_pinos();
 
-	// Configurar USCI B1 para ser mestre do barramento I2C
-	USCI_B0_config();
+    // Configurar USCI A0 para interface UART
+    USCI_A0_config();
 
-	// Inicializar o ADC12 do MSP430 para fazer conversão
-	adc_config();
+    // Configurar USCI B1 para ser mestre do barramento I2C
+    USCI_B0_config();
 
-	// Inicializar o timer para uso conjunto ao ADC12
-	timer_adc_config();
+    // Inicializar o ADC12 do MSP430 para fazer conversão
+    adc_config();
 
-	// Inicializar o LCD
-	lcd_inic();
-	lcd_comando(0x0C); // Desabilitar o cursor
-	lcd_i2c_write(8); // Acender o backlight
+    // Inicializar o timer para uso conjunto ao ADC12
+    timer_adc_config();
 
-	__enable_interrupt();
+    // Inicializar o LCD
+    lcd_inic();
+    lcd_comando(0x0C); // Desabilitar o cursor
+    lcd_i2c_write(8);  // Acender o backlight
+
+    __enable_interrupt();
 
     // Inicializar enviando mensagem para o usuário
     bt_str("Inicializando...\n");
@@ -78,150 +76,146 @@ int main(void)
     LED2_ON; // Inicialização OK
     __delay_cycles(1280000);
 
-
     // Testar as interfaces
     LED2_OFF;
 
     // Não vamos testar Bluetooth pois é a fonte principal de comunicação
 
     // Testar LCD
-      if(i2c_test(LCD_ADDRESS, READ) == FALSE || i2c_test(LCD_ADDRESS, WRITE) == FALSE) {
-          LED1_ON; // Ligar LED vermelho pois há um erro (LCD perdeu a conexão depois da inicialização)
-          bt_str("LCD não conectado. Por favor reveja a ligação e tente novamente.\n");
-          while(1); // Travar execução
-      }
-      bt_str("LCD conectado\n");
-      lcd_limpar();
-      lcd_cursor(0);
-      lcd_escrever_string("LCD conectado");
-      __delay_cycles(1280000);
-
-
-
+    if (i2c_test(LCD_ADDRESS, READ) == FALSE || i2c_test(LCD_ADDRESS, WRITE) == FALSE)
+    {
+        LED1_ON; // Ligar LED vermelho pois há um erro (LCD perdeu a conexão depois da inicialização)
+        bt_str("LCD não conectado. Por favor reveja a ligação e tente novamente.\n");
+        while (1)
+            ; // Travar execução
+    }
+    bt_str("LCD conectado\n");
+    lcd_limpar();
+    lcd_cursor(0);
+    lcd_escrever_string("LCD conectado");
+    __delay_cycles(1280000);
 
     // Iniciar medição
-      bt_str("Iniciando medicao\n");
-      lcd_limpar();
-      lcd_cursor(0);
-      lcd_escrever_string("Inicio medicao");
-      __delay_cycles(1280000);
+    bt_str("Iniciando medicao\n");
+    lcd_limpar();
+    lcd_cursor(0);
+    lcd_escrever_string("Inicio medicao");
+    __delay_cycles(1280000);
 
+    // Loop infinito para acompanhamento
+    while (TRUE)
+    {
+        pico_base = 0;
 
-      // Loop infinito para acompanhamento
-      while(TRUE)
-         {
-             pico_base = 0;
+        // Filtrar um pico base do sinal a cada loop
 
-             // Filtrar um pico base do sinal a cada loop
+        // Aqui pode ser melhorado esse algoritmo para usar um limiar (por exemplo 2800 ou 3000)
+        // ou outra estratégia para calcular os batimentos e a freq. cardíaca
+        for (i = 0; i < 128; i++)
+        {
+            adc_vetor[i] = adc_output;
+            if (adc_vetor[i] > pico_base)
+                pico_base = adc_vetor[i];
+        }
 
-             // Aqui pode ser melhorado esse algoritmo para usar um limiar (por exemplo 2800 ou 3000)
-             // ou outra estratégia para calcular os batimentos e a freq. cardíaca
-             for(i = 0; i<128; i++)
-             {
-                 adc_vetor[i] = adc_output;
-                 if(adc_vetor[i]>pico_base)
-                     pico_base = adc_vetor[i];
-             }
+        if ((adc_output > pico_base) && (numero_batimentos < 5))
+        {
+            numero_batimentos++;
+            P1OUT &= ~BIT0;
+            P1OUT |= BIT0;
+            __delay_cycles(128000);
+            P1OUT ^= BIT0;
+        }
 
-             if((adc_output > pico_base) && (numero_batimentos < 5))
-             {
-                 numero_batimentos++;
-                 P1OUT &= ~BIT0;
-                 P1OUT |= BIT0;
-                 __delay_cycles(128000);
-                 P1OUT ^=BIT0;
-             }
+        // Calcular o BMP novo devido aos cinco batimentos
+        if (numero_batimentos >= 5)
+        {
+            // heart_rate = (500[Hz]*5*60)/numero_pulsos_amostragrem
+            heart_rate = 150000 / numero_pulsos_amostragrem;
 
-             // Calcular o BMP novo devido aos cinco batimentos
-             if(numero_batimentos>=5)
-                 {
-                     // heart_rate = (500[Hz]*5*60)/numero_pulsos_amostragrem
-                     heart_rate = 150000/numero_pulsos_amostragrem;
+            // Filtro de frequência cardíaca em software para exibir valores coerentes com a realidade
+            if ((heart_rate > 20) && (heart_rate < 180))
+            {
+                // Imprimir no LCD e no modulo Bluetooth
+                // Informar a nova média da frequência cardíaca
+                bt_str("BMP: ");
+                bt_decimal(heart_rate);
+                bt_str("  S2\n");
+                lcd_limpar();
+                lcd_cursor(0);
+                lcd_escrever_string("BMP:");
+                lcd_cursor(5);
+                lcd_decimal(heart_rate);
 
-                     // Filtro de frequência cardíaca em software para exibir valores coerentes com a realidade
-                     if((heart_rate>20)&&(heart_rate<180))
-                     {
-                         // Imprimir no LCD e no modulo Bluetooth
-                         // Informar a nova média da frequência cardíaca
-                         bt_str("BMP: ");
-                         bt_decimal(heart_rate);
-                         bt_str("  S2\n");
-                         lcd_limpar();
-                         lcd_cursor(0);
-                         lcd_escrever_string("BMP:");
-                         lcd_cursor(5);
-                         lcd_decimal(heart_rate);
+                lcd_cursor(10);
+                lcd_escrever_string("S2");
 
-                         lcd_cursor(10);
-                         lcd_escrever_string("S2");
+                if (heart_rate < 50)
+                {
+                    lcd_cursor(0x40);
+                    lcd_escrever_string("! BMP MT baixa !");
+                    bt_str("! BMP MT baixa !\n");
+                }
+                else if (heart_rate >= 50 && heart_rate < 60)
+                {
+                    lcd_cursor(0x40);
+                    lcd_escrever_string("BMP baixa");
+                    bt_str("BMP baixa\n");
+                }
+                else if (heart_rate >= 60 && heart_rate < 80)
+                {
+                    lcd_cursor(0x40);
+                    lcd_escrever_string("BMP normal");
+                    bt_str("BMP normal\n");
+                }
+                else if (heart_rate >= 80 && heart_rate < 120)
+                {
+                    lcd_cursor(0x40);
+                    lcd_escrever_string("BMP alta");
+                    bt_str("BMP alta\n");
+                }
+                else
+                {
+                    lcd_cursor(0x40);
+                    lcd_escrever_string("! BMP MT alta !");
+                    bt_str("! BMP MT alta !\n");
+                }
+            }
 
-                         if (heart_rate < 50)
-                         {
-                             lcd_cursor(0x40);
-                             lcd_escrever_string("! BMP MT baixa !");
-                             bt_str("! BMP MT baixa !\n");
-                         }
-                         else if (heart_rate >= 50 && heart_rate < 60)
-                         {
-                             lcd_cursor(0x40);
-                             lcd_escrever_string("BMP baixa");
-                             bt_str("BMP baixa\n");
-                         }
-                         else if (heart_rate >= 60 && heart_rate < 80)
-                         {
-                             lcd_cursor(0x40);
-                             lcd_escrever_string("BMP normal");
-                             bt_str("BMP normal\n");
-                         }
-                         else if (heart_rate >= 80 && heart_rate < 120)
-                         {
-                             lcd_cursor(0x40);
-                             lcd_escrever_string("BMP alta");
-                             bt_str("BMP alta\n");
-                         }
-                         else {
-                             lcd_cursor(0x40);
-                             lcd_escrever_string("! BMP MT alta !");
-                             bt_str("! BMP MT alta !\n");
-                         }
-                     }
+            LED2_OFF;
+            LED2_ON;
+            __delay_cycles(128000);
+            LED2_TOGGLE;
 
-                     LED2_OFF;
-                     LED2_ON;
-                     __delay_cycles(128000);
-                     LED2_TOGGLE;
+            // Resetar os contadores para recalcular a frequencia cardiaca
+            numero_batimentos = 0;
+            numero_pulsos_amostragrem = 0;
+        }
+    }
 
-                     // Resetar os contadores para recalcular a frequencia cardiaca
-                     numero_batimentos = 0;
-                     numero_pulsos_amostragrem = 0;
-                 }
-         }
-
-
-	return 0;
+    return 0;
 }
 
 // Delay para evitar rebotes
 void delay(int x)
 {
     volatile int i;
-    for (i = 0; i < x; i++);
+    for (i = 0; i < x; i++)
+        ;
 }
 
 #pragma vector = TIMER0_A0_VECTOR
 __interrupt void ta0_isr()
 {
-    ADC12CTL0 |= ADC12ENC;       // Habilita o conversor
-    ADC12CTL0 &= ~ADC12SC;       // Gera uma flanco de subida em SC
+    ADC12CTL0 |= ADC12ENC; // Habilita o conversor
+    ADC12CTL0 &= ~ADC12SC; // Gera uma flanco de subida em SC
     ADC12CTL0 |= ADC12SC;
     numero_pulsos_amostragrem++;
-
 }
 
 #pragma vector = ADC12_VECTOR
 __interrupt void adc12_isr()
 {
     ADC12IFG = 0;
-    adc_output= ADC12MEM0;
-
+    adc_output = ADC12MEM0;
 }

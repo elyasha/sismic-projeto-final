@@ -14,6 +14,4 @@ void bt_str(char *vet);
 void bt_char(char c);
 void bt_decimal(int valor);
 
-
-
 #endif /* HC05_H_ */

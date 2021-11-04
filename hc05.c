@@ -50,7 +50,6 @@ void bt_decimal(int valor)
     x = x - 10 * z;
     z = x / 1; // unidades
     bt_char(0x30 + z);
-
 }
 
 // Enviar uma string pela serial
@@ -71,5 +70,3 @@ void USCI_A0_config(void)
     P3SEL |= BIT4 | BIT3; //Disponibilizar pinos
     UCA0CTL1 = UCSSEL_1;  //RST=0, ACLK
 }
-
-
